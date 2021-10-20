@@ -1,0 +1,25 @@
+.IconButton {
+  position: relative;
+  left: 95%;
+  top: 20px;
+
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0;
+  padding: 0;
+
+  border-radius: 50%;
+  border: none;
+
+  transition: background 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.IconButton:hover,
+.IconButton:focus {
+  transform: scale(1.1);
+}
