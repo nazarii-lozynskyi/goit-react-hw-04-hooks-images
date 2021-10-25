@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import Skeleton from 'react-loading-skeleton';
 
@@ -15,140 +15,118 @@ import Idle from '../Idle';
 import styles from './ImageGallery.module.css';
 
 const newAPI = new API();
-export default class ImageGallery extends Component {
-  state = {
-    gallery: null,
-    status: 'idle',
-    totalHits: null,
+export default function ImageGallery({ inputValue }) {
+  const [gallery, setGallery] = useState(null);
+  const [status, setStatus] = useState('idle');
+  const [totalHits, setTotalHits] = useState(null);
+  const [error, setError] = useState(null);
 
-    error: null,
-  };
-
-  componentDidUpdate(prevProps, prevStats) {
-    const prevName = prevProps.inputValue;
-    const nextName = this.props.inputValue;
-
-    if (prevName !== nextName) {
-      this.setState({ status: 'pending' });
-
-      newAPI.value = nextName;
-      newAPI.resetPage();
-
-      newAPI.fetchImages().then(result => {
-        if (result.hits.length !== 0) {
-          return this.setState({
-            gallery: result.hits,
-            status: 'resolved',
-            totalHits: result.totalHits,
-          });
-        }
-        return this.setState({
-          gallery: result.hits,
-          status: 'rejected',
-          totalHits: result.totalHits,
-        });
-      });
+  useEffect(() => {
+    if (!inputValue) {
+      return;
     }
-  }
 
-  loadMoreImages = () => {
-    this.setState({ status: 'pending' });
+    setStatus('pending');
 
-    //setTimeout
+    newAPI.value = inputValue;
+    newAPI.resetPage();
+
+    newAPI.fetchImages().then(result => {
+      if (result.hits.length !== 0) {
+        setGallery(result.hits);
+        setTotalHits(result.totalHits);
+        setStatus('resolved');
+
+        return;
+      }
+      setGallery(result.hits);
+      setTotalHits(result.totalHits);
+      setStatus('rejected');
+
+      return result;
+    });
+  }, [inputValue]);
+
+  const loadMoreImages = () => {
+    setStatus('pending');
+
     newAPI
       .fetchImages()
       .then(result => {
-        this.setState(prevState => {
-          return {
-            gallery: [...prevState.gallery, ...result.hits],
-            status: 'resolved',
-            totalHits: result.totalHits,
-          };
-        });
+        setGallery([...gallery, ...result.hits]);
+        setTotalHits(result.totalHits);
+        setStatus('resolved');
+
+        return result;
       })
-      .catch(error => this.setState({ error, status: 'rejected' }))
+      .catch(error => {
+        setError(error);
+        setStatus('rejected');
+      })
       .finally(() => {
-        this.scroll();
+        scroll();
       });
-    console.log(this.state.totalHits);
-    console.log(this.state.gallery.length);
   };
 
-  scroll() {
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }, 500);
+  const scroll = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
+  if (status === 'idle') {
+    return <Idle />;
   }
 
-  render() {
-    const { status } = this.state;
-    const { inputValue } = this.props;
+  if (status === 'pending') {
+    return (
+      <>
+        <ul className={styles.ImageGallery}>
+          {gallery &&
+            gallery.map(galleryItem => (
+              <li className={styles.Item} key={galleryItem.id}>
+                <Skeleton height={260} width={330} />
+              </li>
+            ))}
+        </ul>
 
-    if (status === 'idle') {
-      return <Idle />;
-    }
+        <Loader
+          type="Puff"
+          color="#00BFFF"
+          height={100}
+          width={100}
+          timeout={3000}
+        />
+      </>
+    );
+  }
 
-    if (status === 'pending') {
-      return (
-        <>
-          <ul className={styles.ImageGallery}>
-            {this.state.gallery &&
-              this.state.gallery.map(galleryItem => (
-                <li className={styles.Item} key={galleryItem.id}>
-                  <Skeleton height={260} width={330} />
-                </li>
-              ))}
-          </ul>
+  if (status === 'rejected') {
+    return <ErrorMessage inputValue={inputValue} message={error} />;
+  }
 
-          <Loader
-            type="Puff"
-            color="#00BFFF"
-            height={100}
-            width={100}
-            timeout={3000}
-          />
-        </>
-      );
-    }
+  if (status === 'resolved') {
+    return (
+      <>
+        <ul className={styles.ImageGallery}>
+          {gallery &&
+            gallery.map(galleryItem => (
+              <ImageGalleryItem
+                src={galleryItem.webformatURL}
+                alt={galleryItem.tags}
+                key={galleryItem.id}
+                largeImageURL={galleryItem.largeImageURL}
+              ></ImageGalleryItem>
+            ))}
+        </ul>
 
-    if (status === 'rejected') {
-      return (
-        <ErrorMessage inputValue={inputValue} message={this.state.error} />
-      );
-    }
-
-    if (status === 'resolved') {
-      return (
-        <>
-          <ul className={styles.ImageGallery}>
-            {this.state.gallery &&
-              this.state.gallery.map(galleryItem => (
-                <ImageGalleryItem
-                  src={galleryItem.webformatURL}
-                  alt={galleryItem.tags}
-                  key={galleryItem.id}
-                  onClick={this.toggleModal}
-                  largeImageURL={galleryItem.largeImageURL}
-                ></ImageGalleryItem>
-              ))}
-          </ul>
-
-          {this.state.totalHits > 12 ? (
-            <Button onClick={this.loadMoreImages} label="Load more" />
-          ) : (
-            <></>
-          )}
-
-          {/* {this.state.gallery.length > 12 ? (
-            <Button onClick={this.loadMoreImages} label="Load more" />
-          ) : (
-            <></>
-          )} */}
-        </>
-      );
-    }
+        {totalHits > 12 ? (
+          <Button onClick={loadMoreImages} label="Load more" />
+        ) : (
+          <></>
+        )}
+      </>
+    );
   }
 }
