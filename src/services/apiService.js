@@ -15,8 +15,6 @@ export default class ImageApiService {
       key: '22982376-5ba816c8dbdcbd488bfab475d',
     };
 
-    //?q=что_искать&page=номер_страницы&key=твой_ключ&image_type=photo&orientation=horizontal&per_page=12
-
     const BASE_URL = `${baseURL}?q=${this.inputValue}&page=${this.pageNumber}&key=${key}&image_type=${image_type}&orientation=${orientation}&per_page=${per_page}`;
 
     return fetch(BASE_URL)
