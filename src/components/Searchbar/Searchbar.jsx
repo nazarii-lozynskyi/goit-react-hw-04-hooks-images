@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,48 +7,48 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import styles from './Searchbar.module.css';
 
-export default class Searchbar extends Component {
-  state = { inputValue: '', page: 1 };
+export default function Searchbar({ onSubmit }) {
+  const [inputValue, setInputValue] = useState('');
+  
 
-  inputId = uuidv4();
+  const inputId = uuidv4();
 
-  handleInputValueChange = event => {
-    this.setState({ inputValue: event.currentTarget.value.toLowerCase() });
+  const handleInputValueChange = event => {
+    setInputValue(event.currentTarget.value.toLowerCase());
   };
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
 
-    if (this.state.inputValue.trim() === '') {
+    if (inputValue.trim() === '') {
       toast.error('The input field cannot be entry. Pleas, enter something');
 
       return;
     }
-    this.props.onSubmit(this.state.inputValue);
+    onSubmit(inputValue);
 
-    this.setState({ inputValue: '', page: 1 });
+    setInputValue('');
+    
   };
 
-  render() {
-    return (
-      <header className={styles.Searchbar}>
-        <form className={styles.Form} onSubmit={this.handleSubmit}>
-          <button type="submit" className={styles.Button}>
-            <span className={styles.ButtonLabel}>Search</span>
-          </button>
+  return (
+    <header className={styles.Searchbar}>
+      <form className={styles.Form} onSubmit={handleSubmit}>
+        <button type="submit" className={styles.Button}>
+          <span className={styles.ButtonLabel}>Search</span>
+        </button>
 
-          <input
-            className={styles.Input}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.inputValue}
-            onChange={this.handleInputValueChange}
-            id={this.inputId}
-          />
-        </form>
-      </header>
-    );
-  }
+        <input
+          className={styles.Input}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={inputValue}
+          onChange={handleInputValueChange}
+          id={inputId}
+        />
+      </form>
+    </header>
+  );
 }
